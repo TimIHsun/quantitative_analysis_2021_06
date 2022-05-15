@@ -1,0 +1,3 @@
+"0",""
+"0","###男"
+"0","merged_data_teps_high_school %>% filter(w1s502 == 1) %>%summarise(n = mean(w3clspgm))"

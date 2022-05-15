@@ -1,0 +1,1 @@
+"0","B5 <- lm( w4m3p ~ w1s502+w2m3p+w3clspgm+w1s502*w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3+w2s441+w2s442, data = merged_data_teps_high_school )"

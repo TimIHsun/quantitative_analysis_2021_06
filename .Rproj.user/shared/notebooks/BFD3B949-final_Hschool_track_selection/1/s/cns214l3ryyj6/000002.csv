@@ -1,0 +1,1 @@
+"0","logit_M2 <- glm(w3clspgm ~ w1s502+w2m3p+w1s502*w2m3p+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school, family = ""binomial"") "

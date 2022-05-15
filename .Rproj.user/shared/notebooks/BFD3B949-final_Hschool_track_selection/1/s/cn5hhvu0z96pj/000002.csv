@@ -1,0 +1,5 @@
+"0","for (i in c(1:nrow(merged_data_teps_high_school))){"
+"0","  if(merged_data_teps_high_school$w1s502[[i]] ==2){"
+"0","    merged_data_teps_high_school$w1s502[[i]] <- 0"
+"0","  }"
+"0","}"

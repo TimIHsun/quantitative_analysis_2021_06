@@ -1,0 +1,2 @@
+"0","### 男"
+"0","merged_data_teps_high_school %>% filter(w2m3p < quantile(merged_data_teps_high_school$w2m3p)[""25%""], w1s502 == 1) %>% summarise(n = mean(w3clspgm))"

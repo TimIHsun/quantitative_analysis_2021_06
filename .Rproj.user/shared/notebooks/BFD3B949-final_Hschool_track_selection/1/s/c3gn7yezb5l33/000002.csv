@@ -1,0 +1,1 @@
+"0","A3_model <- lm( w4all3p ~ w1s502+w2all3p+w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school ) "

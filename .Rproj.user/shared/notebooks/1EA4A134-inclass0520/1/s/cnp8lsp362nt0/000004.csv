@@ -1,0 +1,4 @@
+"0","m1beta <- lm.beta(m1)
+"
+"2","Error in lm.beta(m1) : 沒有這個函數 ""lm.beta""
+"

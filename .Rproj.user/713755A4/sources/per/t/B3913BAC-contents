@@ -1,0 +1,98 @@
+---
+title: "inclass0520"
+author: "邱奕勳"
+date: "7/5/2021"
+output: html_document
+---
+
+```{r}
+library(lavaan)
+library(lm.beta)
+```
+
+```{r}
+read.table("/Users/tim/Desktop/model1.dat" ,header = T) -> data
+```
+
+# 練習題1
+```{r}
+m1 <- lm(lifestyle4 ~ lifestyle3 + schema3, data =  data)
+m1beta <- lm.beta(m1)
+
+m2 <- lm(neiborLVU4 ~ schema3 + neiborLVU3, data =  data)
+m2beta <- lm.beta(m2)
+
+m3 <- lm(dev_all5 ~ lifestyle4 + schema3 + neiborLVU4  + dev_all3 ,data = data)
+m3beta <- lm.beta(m3)
+
+```
+
+## 路徑係數
+```{r}
+m1beta$standardized.coefficients
+m2beta$standardized.coefficients
+m3beta$standardized.coefficients
+```
+
+
+## R_square
+
+```{r}
+summary(m1beta)$r.squared
+summary(m2beta)$r.squared
+summary(m3beta)$r.squared
+```
+
+
+```{r}
+source("/Users/tim/Desktop/process .R")
+```
+
+## schema3->lifestyle4->dev_all5
+
+```{r}
+process(
+  data = data, y = "dev_all5", x = "schema3", m = "lifestyle4",
+  model = 4, effsize = 1, total = 1, stand = 1, boot = 500, modelbt = 1, seed = 4321)
+
+## indirect effect
+## lifestyle4 
+## effect : 0.2152; BootLLCI : 0.0290; BootULCI : 0.4991
+```
+
+## schema3->neiborLVU4->dev_all5
+
+```{r}
+process(
+  data = data, y = "dev_all5", x = "schema3", m = "neiborLVU4",
+  model = 4, effsize = 1, total = 1, stand = 1, boot = 500, modelbt = 1, seed = 4321)
+
+## indirect effect
+## neiborLVU4 
+## effect : 0.1793; BootLLCI : 0.0458; BootULCI : 0.3411
+```
+
+# 練習題2
+```{r}
+
+model_sem <- '
+  # regressions
+  lifestyle4 ~ famedu + sch + gender + lifestyle3 + schema3
+  neiborLVU4 ~ famedu + sch + gender + schema3 + neiborLVU3
+  dev_all5 ~ famedu + sch + gender + lifestyle4 + schema3 + neiborLVU4 + dev_all3
+  
+  # covariances
+  lifestyle4 ~~ neiborLVU4
+'
+
+fitmodel_sem <- sem (model_sem, data = data)
+summary(fitmodel_sem, standardized = T)
+```
+
+```{r}
+modindices(fitmodel_sem, sort. = T)
+```
+前3 mi index
+1. lifestyle4	~~	dev_all5 -> 增加covariance
+2. dev_all5	~	lifestyle3 -> 增加直接路徑
+3. lifestyle3	~	dev_all5 -> 邏輯上不合理，無法運用未來預測過去

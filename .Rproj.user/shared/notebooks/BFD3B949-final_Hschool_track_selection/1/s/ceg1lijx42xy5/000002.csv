@@ -1,0 +1,6 @@
+"0","merged_data_teps_high_school[merged_data_teps_high_school$w1p515 == 97,] %>% rownames()"
+"1","[1]"
+"1"," ""2055"""
+"1","
+"
+"0","merged_data_teps_high_school %>% filter(w1p515 != 97) -> merged_data_teps_high_school"

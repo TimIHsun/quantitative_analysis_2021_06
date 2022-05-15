@@ -1,0 +1,6 @@
+"0","merged_data_teps <- merge(wave1_student, wave2_student, by = ""stud_id"")"
+"0","merged_data_teps <- merge(merged_data_teps, wave3_student, by = ""stud_id"")"
+"0","merged_data_teps <- merge(merged_data_teps, wave4_student, by = ""stud_id"")"
+"0","merged_data_teps <- merge(merged_data_teps, wave1_math_teacher, by = ""stud_id"")"
+"0","merged_data_teps <- merge(merged_data_teps, wave2_math_teacher, by = ""stud_id"")"
+"0","merged_data_teps <- merge(merged_data_teps, wave1_family, by = ""stud_id"")"

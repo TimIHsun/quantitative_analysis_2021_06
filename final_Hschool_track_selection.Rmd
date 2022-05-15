@@ -1,0 +1,546 @@
+---
+title: "final_Hschool_track_selection"
+author: "邱奕勳"
+date: "6/15/2021"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(haven)
+library(vtable)
+library(stats)
+library(sjPlot)
+```
+
+
+### data
+學生四期、數學老師兩期、家長一期
+```{r}
+
+wave1_student <- read_dta("data/TEPS/wave1/junior/stata/w1_j_s_lv6.0.dta") %>% select(
+  "stud_id","w1all3p","w1cf3p","w1m3p","w1s502","w1s502")
+
+wave2_student <-read_dta("data/TEPS/wave2/junior/stata/w2_j_s_lv6.1.dta") %>% select(
+  "stud_id", "w2all3p","w2cf3p","w2m3p","w2s404","w2s441","w2s442","w2urban3","w2s402a"
+)
+
+wave3_student <- read_dta("data/TEPS/wave3/stata/w3_sf_s_cp_lv6.0.dta") %>% select(
+  "stud_id", "w3pgrm", "w3clspgm"
+)
+
+wave4_student <- read_dta("data/TEPS/wave4/stata/w4_sf_s_cp_lv6.1.dta", encoding = "big5") %>% select("stud_id","w4pgrm","w4clspgm","w4all3p","w4cf3p","w4m3p")
+wave1_math_teacher <- read_dta("data/wave1_teacher/stata/w1_j_mt_lv6.1.dta", encoding = "big5") %>% select("stud_id","w1t501")
+
+wave2_math_teacher <- read_dta("data/wave2_teacher/stata/w2_j_mt_lv6.1.dta", encoding = "big5") %>% select("stud_id","w2t301")
+
+wave1_family <- read_dta("data/wave1_family/stata/w1_j_p_lv6.0.dta", encoding = "big5") %>% select("stud_id", "w1p103","w1p515","w1faedu","w1moedu")
+
+```
+
+#### data-merge
+```{r}
+merged_data_teps <- merge(wave1_student, wave2_student, by = "stud_id")
+merged_data_teps <- merge(merged_data_teps, wave3_student, by = "stud_id")
+merged_data_teps <- merge(merged_data_teps, wave4_student, by = "stud_id")
+merged_data_teps <- merge(merged_data_teps, wave1_math_teacher, by = "stud_id")
+merged_data_teps <- merge(merged_data_teps, wave2_math_teacher, by = "stud_id")
+merged_data_teps <- merge(merged_data_teps, wave1_family, by = "stud_id")
+```
+
+#### data-selection (普通高中)
+樣本數： 2236
+```{r}
+merged_data_teps %>% filter(w3pgrm == 2) -> merged_data_teps_high_school
+```
+
+#### 缺失值處理
+##### 成績
+第二波成績缺失值： 17個
+```{r}
+is.na(merged_data_teps_high_school$w2all3p) %>% sum()
+is.na(merged_data_teps_high_school$w2cf3p) %>% sum()
+is.na(merged_data_teps_high_school$w2m3p) %>% sum()
+```
+
+第四波成績缺失值： 84個
+```{r}
+is.na(merged_data_teps_high_school$w4all3p) %>% sum()
+is.na(merged_data_teps_high_school$w4cf3p) %>% sum()
+is.na(merged_data_teps_high_school$w4m3p) %>% sum()
+```
+
+刪除第二波與第四波測驗分數的缺失值
+```{r}
+na.omit(merged_data_teps_high_school) -> merged_data_teps_high_school
+```
+
+##### 個人信念 w2s404
+99: 未作答; 97: 不合理
+```{r}
+merged_data_teps_high_school[merged_data_teps_high_school$w2s404==99,] %>% rownames() 
+
+merged_data_teps_high_school %>% filter(merged_data_teps_high_school$w2s404!=99) -> merged_data_teps_high_school
+```
+
+```{r}
+merged_data_teps_high_school[merged_data_teps_high_school$w2s404==97,] %>% rownames() 
+
+merged_data_teps_high_school %>% filter(merged_data_teps_high_school$w2s404!=97) -> merged_data_teps_high_school
+```
+
+##### 月薪 w1p515
+
+```{r}
+merged_data_teps_high_school[merged_data_teps_high_school$w1p515 == 97,] %>% rownames()
+
+merged_data_teps_high_school %>% filter(w1p515 != 97) -> merged_data_teps_high_school
+```
+
+##### 月薪 w1faedu
+
+```{r}
+merged_data_teps_high_school[merged_data_teps_high_school$w1faedu == 97,] %>% rownames()
+
+merged_data_teps_high_school %>% filter(w1faedu != 97) -> merged_data_teps_high_school
+```
+
+##### 準備考試w2s441
+```{r}
+merged_data_teps_high_school[merged_data_teps_high_school$w2s441 == 97,] %>% rownames()
+
+merged_data_teps_high_school[merged_data_teps_high_school$w2s441 == 99,] %>% rownames()
+
+merged_data_teps_high_school %>% filter(w2s441 != 97 & w2s441!= 99) -> merged_data_teps_high_school
+```
+
+##### 比賽w2s442
+
+```{r}
+merged_data_teps_high_school[merged_data_teps_high_school$w2s442 == 97,] %>% rownames()
+
+merged_data_teps_high_school[merged_data_teps_high_school$w2s442 == 99,] %>% rownames()
+
+merged_data_teps_high_school %>% filter(w2s442 != 97 & w2s442!= 99) -> merged_data_teps_high_school
+```
+
+##### 雙親家庭 w1p103
+
+```{r}
+merged_data_teps_high_school[merged_data_teps_high_school$w1p103 == 97,] %>% rownames()
+
+merged_data_teps_high_school[merged_data_teps_high_school$w1p103 == 99,] %>% rownames()
+
+merged_data_teps_high_school %>% filter(w1p103 != 97 & w1p103!= 99) -> merged_data_teps_high_school
+```
+
+##### 性別w1s502
+
+```{r}
+merged_data_teps_high_school[merged_data_teps_high_school$w1s502 == 97,] %>% rownames()
+
+merged_data_teps_high_school[merged_data_teps_high_school$w1s502 == 99,] %>% rownames()
+
+merged_data_teps_high_school %>% filter(w1s502 != 97 & w1s502!= 99) -> merged_data_teps_high_school
+```
+
+
+#### 變數轉換
+##### 教師性別
+一是「國一與國三數學老師皆為男性」，二是「國一與國三數學老師男女各一位」，三是 「國一與國三數學老師皆為女性」，四是老師資訊缺失
+```{r}
+merged_data_teps_high_school[["mt_sex"]] <- NA
+
+for (i in c(1:nrow(merged_data_teps_high_school))) {
+  if (merged_data_teps_high_school$w1t501[[i]] == 1 &  merged_data_teps_high_school$w2t301[[i]] == 1 ){ #都男
+  merged_data_teps_high_school[["mt_sex"]][[i]] <- 1
+  }else if(merged_data_teps_high_school$w1t501[[i]] == 2 & merged_data_teps_high_school$w2t301[[i]] == 2){ #都女
+    merged_data_teps_high_school[["mt_sex"]][[i]] <- 3
+  }else if(merged_data_teps_high_school$w1t501[[i]] == 99 | merged_data_teps_high_school$w2t301[[i]] == 99){ #無資料
+    merged_data_teps_high_school[["mt_sex"]][[i]] <- 4
+  }else if (merged_data_teps_high_school$w1t501[[i]] == 1 & merged_data_teps_high_school$w2t301[[i]] == 2){ #各一
+    merged_data_teps_high_school[["mt_sex"]][[i]] <- 2
+  }else if (merged_data_teps_high_school$w1t501[[i]] == 2 & merged_data_teps_high_school$w2t301[[i]] == 1){ #各一
+    merged_data_teps_high_school[["mt_sex"]][[i]] <- 2
+  }
+}
+```
+
+##### 準備考試
+1. w2s441 「準備各類考試時，會大量減少平常的嗜好(如運動、上網、看電視/影)，以全心念書」(1=會;0=不會)
+
+這兩個變項的原始分類為:「國小五、六年級和國中都會如此」、「只有國小五、六 年級時如此」、「只有國中時如此」、「從來都不會如此」。本分析將「國中時期會 如此」視為國中時期顯示較強的個人動機(第一、三類)，部分學生雖針對國小時期 給予正面回答，但若未持續至國中，此類型便不予考慮。
+```{r}
+for (i in c(1:nrow(merged_data_teps_high_school))) {
+  if(merged_data_teps_high_school$w2s441[[i]] == 1 | merged_data_teps_high_school$w2s441[[i]] == 3 ){
+    merged_data_teps_high_school$w2s441[[i]]  <- 1
+  }else{
+    merged_data_teps_high_school$w2s441[[i]] <- 0
+  }
+}
+```
+##### 比賽
+2. w2s442「主動爭取表現(如擔任幹部)或參加比賽的機會」(1= 會)
+
+```{r}
+for (i in c(1:nrow(merged_data_teps_high_school))) {
+  if(merged_data_teps_high_school$w2s442[[i]] == 1 | merged_data_teps_high_school$w2s442[[i]] == 3 ){
+    merged_data_teps_high_school$w2s442[[i]] <- 1
+  }else{
+    merged_data_teps_high_school$w2s442[[i]] <- 0
+  }
+}
+```
+
+##### 雙親家庭
+3. 雙親家庭為1
+```{r}
+for (i in c(1:nrow(merged_data_teps_high_school))){
+  if(merged_data_teps_high_school$w1p103[[i]] !=1){
+    merged_data_teps_high_school$w1p103[[i]] <- 0
+  }
+}
+```
+
+##### 性別
+女性為0
+```{r}
+for (i in c(1:nrow(merged_data_teps_high_school))){
+  if(merged_data_teps_high_school$w1s502[[i]] ==2){
+    merged_data_teps_high_school$w1s502[[i]] <- 0
+  }
+}
+```
+
+##### 自然組
+```{r}
+for (i in c(1:nrow(merged_data_teps_high_school))){
+  if(merged_data_teps_high_school$w3clspgm[[i]]==21){
+    merged_data_teps_high_school$w3clspgm[[i]] <- 1
+  }else if (merged_data_teps_high_school$w3clspgm[[i]] == 22){
+    merged_data_teps_high_school$w3clspgm[[i]] <- 0
+  }
+}
+```
+
+##### 信念
+```{r}
+for (i in c(1:nrow(merged_data_teps_high_school))){
+  merged_data_teps_high_school$w2s404[[i]] <- 5-merged_data_teps_high_school$w2s404[[i]]
+}
+```
+
+
+#### 類別資料data-type
+```{r}
+as.character(merged_data_teps_high_school$w1s502) -> merged_data_teps_high_school$w1s502
+
+as.character(merged_data_teps_high_school$w1faedu) -> merged_data_teps_high_school$w1faedu
+
+as.character(merged_data_teps_high_school$w1moedu) -> merged_data_teps_high_school$w1moedu
+
+as.character(merged_data_teps_high_school$w1p515) -> merged_data_teps_high_school$w1p515
+
+as.character(merged_data_teps_high_school$w1p103) -> merged_data_teps_high_school$w1p103
+
+as.character(merged_data_teps_high_school$w2urban3) -> merged_data_teps_high_school$w2urban3
+
+as.character(merged_data_teps_high_school$mt_sex) ->
+  merged_data_teps_high_school$mt_sex
+```
+
+
+
+
+#### 抽取部分樣本資料
+##### 男性
+```{r}
+boy <- merged_data_teps_high_school %>% filter(merged_data_teps_high_school$w1s502 == 1)
+```
+
+##### 女性
+```{r}
+girl <- merged_data_teps_high_school %>% 
+  filter(merged_data_teps_high_school$w1s502 == 0)
+```
+
+### =============
+
+### 高二選讀自然組比例，依國三(w2)數學測驗分數區分成四組
+
+```{r}
+## PR25以下，
+### 全部高中生
+merged_data_teps_high_school %>% filter(w2m3p < quantile(merged_data_teps_high_school$w2m3p)["25%"]) %>% summarise(n = mean(w3clspgm))
+### 男
+merged_data_teps_high_school %>% filter(w2m3p < quantile(merged_data_teps_high_school$w2m3p)["25%"], w1s502 == 1) %>% summarise(n = mean(w3clspgm))
+### 女
+merged_data_teps_high_school %>% filter(w2m3p < quantile(merged_data_teps_high_school$w2m3p)["25%"], w1s502 == 0) %>% summarise(n = mean(w3clspgm))
+
+```
+```{r}
+## PR25-50，
+### 全部高中生
+merged_data_teps_high_school %>% filter(between(
+  w2m3p,  
+  quantile(merged_data_teps_high_school$w2m3p)["25%"],
+  quantile(merged_data_teps_high_school$w2m3p)["50%"]
+  )) %>% summarise(n = mean(w3clspgm))
+### 男
+merged_data_teps_high_school %>% filter(between(
+  w2m3p,  
+  quantile(merged_data_teps_high_school$w2m3p)["25%"],
+  quantile(merged_data_teps_high_school$w2m3p)["50%"]
+  ), w1s502 == 1) %>% summarise(n = mean(w3clspgm))
+
+### 女
+merged_data_teps_high_school %>% filter(between(
+  w2m3p,  
+  quantile(merged_data_teps_high_school$w2m3p)["25%"],
+  quantile(merged_data_teps_high_school$w2m3p)["50%"]
+  ), w1s502 == 0) %>% summarise(n = mean(w3clspgm))
+
+```
+
+```{r}
+## PR50-75，
+### 全部高中生
+merged_data_teps_high_school %>% filter(between(
+  w2m3p,  
+  quantile(merged_data_teps_high_school$w2m3p)["50%"],
+  quantile(merged_data_teps_high_school$w2m3p)["75%"]
+  )) %>% summarise(n = mean(w3clspgm))
+### 男
+merged_data_teps_high_school %>% filter(between(
+  w2m3p,  
+  quantile(merged_data_teps_high_school$w2m3p)["50%"],
+  quantile(merged_data_teps_high_school$w2m3p)["75%"]
+  ), w1s502 == 1) %>% summarise(n = mean(w3clspgm))
+
+### 女
+merged_data_teps_high_school %>% filter(between(
+  w2m3p,  
+  quantile(merged_data_teps_high_school$w2m3p)["50%"],
+  quantile(merged_data_teps_high_school$w2m3p)["75%"]
+  ), w1s502 == 0) %>% summarise(n = mean(w3clspgm))
+
+```
+```{r}
+## PR75以上，
+### 全部高中生
+merged_data_teps_high_school %>% filter(w2m3p > quantile(merged_data_teps_high_school$w2m3p)["75%"]) %>% summarise(n = mean(w3clspgm))
+### 男
+merged_data_teps_high_school %>% filter(w2m3p > quantile(merged_data_teps_high_school$w2m3p)["75%"], w1s502 == 1) %>% summarise(n = mean(w3clspgm))
+### 女
+merged_data_teps_high_school %>% filter(w2m3p > quantile(merged_data_teps_high_school$w2m3p)["75%"], w1s502 == 0) %>% summarise(n = mean(w3clspgm))
+
+```
+```{r}
+##全部樣本
+
+merged_data_teps_high_school %>% summarise(n = mean(w3clspgm))
+
+###男
+merged_data_teps_high_school %>% filter(w1s502 == 1) %>%summarise(n = mean(w3clspgm))
+
+###女
+merged_data_teps_high_school %>% filter(w1s502 == 0) %>%summarise(n = mean(w3clspgm))
+```
+
+
+### 描述統計
+
+```{r}
+vtable::st(merged_data_teps_high_school)
+
+##信念
+merged_data_teps_high_school$w2s404 %>% length()
+merged_data_teps_high_school$w2s404 %>% mean()
+merged_data_teps_high_school$w2s404 %>% sd()
+
+##準備考試時會減少娛樂全心念書
+merged_data_teps_high_school$w2s441 %>% length()
+merged_data_teps_high_school$w2s441 %>% mean()
+merged_data_teps_high_school$w2s441  %>% sd()
+
+## 主動爭取表現或比賽機會
+merged_data_teps_high_school$w2s442 %>% length()
+merged_data_teps_high_school$w2s442  %>% mean()
+merged_data_teps_high_school$w2s442  %>% sd()
+
+## 教育期望
+merged_data_teps_high_school$w2s402a %>% length()
+merged_data_teps_high_school$w2s402a %>% mean()
+merged_data_teps_high_school$w2s402a %>% sd()
+```
+
+
+### 多元迴歸分析
+
+#### 高三綜合分析能力測驗分數w4all3p
+
+##### 自變數：男性
+```{r}
+A1_model <- lm( w4all3p ~ w1s502+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school ) 
+```
+
+##### 自變數：男性、w2成績
+```{r}
+A2_model <- lm( w4all3p ~ w1s502+w2all3p+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school ) 
+```
+
+##### 自變數：男性、w2成績、自然組
+```{r}
+A3_model <- lm( w4all3p ~ w1s502+w2all3p+w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school ) 
+```
+
+##### 自變數：男性、w2成績、自然組、控制成就動機
+```{r}
+A4_model <- lm( w4all3p ~ w1s502+w2all3p+w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3+w2s441+w2s442, data = merged_data_teps_high_school ) 
+```
+
+
+##### 自變數：男性、w2成績、自然組、男生×自然組、控制成就動機
+```{r}
+A5_model <- lm( w4all3p ~ w1s502+w2all3p+w3clspgm+w1s502*w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3+w2s441+w2s442, data = merged_data_teps_high_school ) 
+```
+
+```{r}
+predictor_name <- c("截距","男生","父親教育程度-高中、高職","高中、高職","專科或科技大學","一般大學","研究所","未填答","母親教育程度-高中、高職","高中、高職","專科或科技大學","一般大學","研究所","未填答","家庭月收入:2萬元-5萬元","5萬元-10萬元","10萬元-15萬元","15萬元-20萬元","20 萬元以上","未填答","雙親家庭","居住地-城鎮","都市","第二波數學分數","自然組","準備考試/減少嗜好","主動/表現/比賽機會","男性×自然組")
+
+tab_model(A1_model, A2_model, A3_model, A4_model, A5_model, show.ci= F,p.style = "stars", pred.labels = predictor_name, file = "~/Desktop/OLS_alltest.doc")
+```
+
+#### 高三數學分析能力測驗分數w4m3p
+##### 自變數：男性
+```{r}
+B1 <- lm( w4m3p ~ w1s502+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school ) 
+```
+
+##### 自變數：男性、w2成績
+```{r}
+B2 <-lm( w4m3p ~ w1s502+w2m3p+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school )
+```
+
+##### 自變數：男性、w2成績、自然組
+```{r}
+B3 <- lm( w4m3p ~ w1s502+w2m3p+w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school ) %>% summary()
+```
+
+##### 自變數：男性、w2成績、自然組、控制成就動機
+```{r}
+B4 <- lm( w4m3p ~ w1s502+w2m3p+w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3+w2s441+w2s442, data = merged_data_teps_high_school ) 
+```
+
+
+##### 自變數：男性、w2成績、自然組、男生×自然組、控制成就動機
+```{r}
+B5 <- lm( w4m3p ~ w1s502+w2m3p+w3clspgm+w1s502*w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3+w2s441+w2s442, data = merged_data_teps_high_school )
+```
+
+```{r eval=FALSE}
+tab_model(B1, B2, B3, B4, B5, show.ci= F,p.style = "stars", pred.labels = predictor_name, file = "~/Desktop/OLS_alltest.doc")
+```
+
+#### 高三一般分析能力測驗分數
+##### 自變數：男性
+```{r}
+C1<-lm( w4cf3p ~ w1s502+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school ) 
+```
+
+##### 自變數：男性、w2成績
+```{r}
+C2 <- lm( w4cf3p ~ w1s502+w2cf3p+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school ) 
+```
+
+##### 自變數：男性、w2成績、自然組
+```{r}
+C3 <- lm( w4cf3p ~ w1s502+w2cf3p+w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school ) 
+```
+
+##### 自變數：男性、w2成績、自然組、控制成就動機
+```{r}
+C4 <- lm( w4cf3p ~ w1s502+w2cf3p+w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3+w2s441+w2s442, data = merged_data_teps_high_school ) 
+```
+
+
+##### 自變數：男性、w2成績、自然組、男生×自然組、控制成就動機
+```{r}
+C5 <- lm( w4cf3p ~ w1s502+w2cf3p+w3clspgm+w1s502*w3clspgm+w1faedu+w1moedu+w1p515+w1p103+w2urban3+w2s441+w2s442, data = merged_data_teps_high_school ) 
+```
+
+```{r eval=FALSE}
+tab_model(C1, C2, C3, C4, C5, show.ci= F,p.style = "stars", pred.labels = predictor_name, file = "~/Desktop/OLS_alltest.doc")
+```
+
+## ===============
+
+### 邏輯迴歸分析-選讀自然組
+
+#### 自變數：男性、第二波數學分數＋背景控制變數
+```{r}
+logit_M1 <- glm(w3clspgm ~ w1s502+w2m3p+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school, family = "binomial") 
+```
+
+#### 自變數：男性、第二波數學分數、男性×第二波＋背景控制變數
+```{r}
+logit_M2 <- glm(w3clspgm ~ w1s502+w2m3p+w1s502*w2m3p+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school, family = "binomial") 
+```
+
+#### 自變數：男性、第二波數學分數、信念、男性×信念＋背景控制變數
+```{r}
+logit_M3 <-glm(w3clspgm ~ w1s502+w2m3p+w2s404+w1s502:w2s404+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = merged_data_teps_high_school, family = "binomial") 
+
+```
+
+#### 男生樣本
+```{r}
+logit_boy <- glm(w3clspgm ~ w2m3p+w2s404+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = boy, family = "binomial") 
+
+exp(coef(logit_boy))
+```
+
+#### 女生樣本
+```{r}
+logit_girl <- glm(w3clspgm ~ w2m3p+w2s404+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = girl, family = "binomial") 
+
+logit_girl %>% summary()
+```
+
+#### 製表
+```{r}
+predictor_name2 <- c("截距","男性","第二波數學分數","父親教育程度-高中、高職","高中、高職","專科或科技大學","一般大學","研究所","未填答","母親教育程度-高中、高職","高中、高職","專科或科技大學","一般大學","研究所","未填答","家庭月收入:2萬元-5萬元","5萬元-10萬元","10萬元-15萬元","15萬元-20萬元","20 萬元以上","未填答","雙親家庭","居住地-城鎮","都市","男性X第二波數學分數","信念(相信「男生比女生更適合念自然科學」的程度)","性別X信念")
+
+tab_model(logit_M1,logit_M2, logit_M3, logit_boy, logit_girl,
+          show.ci= F,p.style = "stars", show.obs = F,
+          show.loglik = T, pred.labels = predictor_name2, 
+          file = "~/Desktop/OLS_alltest.doc")
+```
+
+### 邏輯迴歸分析-選讀自然組 數學老師性別
+自變數： wave2數學分數、信念、老師性別
+#### 男生樣本
+
+```{r}
+logit_boy_mtsex <- glm(w3clspgm ~ w2m3p+w2s404+mt_sex+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = boy, family = "binomial") 
+```
+
+
+#### 女生樣本
+
+```{r}
+logit_girl_mtsex <- glm(w3clspgm ~ w2m3p+w2s404+mt_sex+w1faedu+w1moedu+w1p515+w1p103+w2urban3, 
+                        data = girl, 
+                        family = "binomial") 
+
+logit_girl_mtsex %>% summary
+```
+#### 製表
+```{r eval=F}
+predictor_name3 <- c("截距","第二波數學分數","信念(相信「男生比女生更適合念自然科學」的程度)","數學老師-男女老師各一位","兩位都是女老師","缺乏老師資訊","父親教育程度-高中、高職","高中、高職","專科或科技大學","一般大學","研究所","未填答","母親教育程度-高中、高職","高中、高職","專科或科技大學","一般大學","研究所","未填答","家庭月收入:2萬元-5萬元","5萬元-10萬元","10萬元-15萬元","15萬元-20萬元","20 萬元以上","未填答","雙親家庭","居住地-城鎮","都市")
+
+tab_model(logit_boy_mtsex,logit_girl_mtsex,
+          show.ci= F,p.style = "stars", show.obs = F,
+          show.loglik = T, pred.labels = predictor_name3, 
+          file = "~/Desktop/OLS_alltest.doc")
+```

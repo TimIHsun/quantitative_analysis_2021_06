@@ -1,0 +1,1 @@
+"0","logit_boy_mtsex <- glm(w3clspgm ~ w2m3p+w2s404+mt_sex+w1faedu+w1moedu+w1p515+w1p103+w2urban3, data = boy, family = ""binomial"") "

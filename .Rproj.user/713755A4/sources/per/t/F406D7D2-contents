@@ -1,0 +1,106 @@
+#https://stats.idre.ucla.edu/r/seminars/rsem/
+
+library(lavaan)
+dat <- read.csv("https://stats.idre.ucla.edu/wp-content/uploads/2021/02/worland5.csv")
+
+#???|?��R?]?j?k???]?k?^
+
+#?]???Ӱj?k?ҫ??A?è??o?зǤưj?k?Y??
+#?w??lm.beta?M??
+
+install.packages("lm.beta")
+library(lm.beta)
+m1<-lm(read ~ ppsych + motiv, data=dat)
+m1beta<-lm.beta(m1)
+m2<-lm(arith ~ motiv + read, data=dat)
+m2beta<-lm.beta(m2)
+
+#???|?Y??
+m1beta$standardized.coefficients
+m2beta$standardized.coefficients
+
+#?ݮt?Ȫ????|?Y??
+sqrt(1-summary(m1beta)$r.squared) #????_????????
+sqrt(1-summary(m2beta)$r.squared) #????_????????
+
+#?˴??????ĪG?]?ĪG?��ѡ^
+#?Nprocess?????ƾɤJR??
+setwd("C:/Users/Yifu/Dropbox/Class/0_current/quantitative practice/R/20210520r")
+source("process.R")
+
+#ppsych-->read-->arith
+process (data = dat, y = "arith", 
+         x = "ppsych", m ="read", model = 4, effsize=1, 
+         total=1, stand=1, cov="motiv", boot=500, modelbt=1, seed=4321)
+
+#motiv-->read-->arith
+process (data = dat, y = "arith", 
+         x = "motiv", m ="read", model = 4, effsize=1, 
+         total=1, stand=1, cov="ppsych", boot=500, modelbt=1, seed=4321)
+
+#?ҫ?????
+#?]full model
+fullm1<-lm(read ~ ppsych + motiv, data=dat)
+fullm2<-lm(arith ~ ppsych + motiv + read, data=dat)
+#???Xfull model??R-square
+fullr1<-summary(fullm1)$r.squared
+fullr2<-summary(fullm2)$r.squared
+
+
+#?]reduced model
+reducedm1<-lm(read ~ ppsych + motiv, data=dat)
+reducedm2<-lm(arith ~ motiv + read, data=dat)
+#???Xreduced model??R-square
+reducedr1<-summary(reducedm1)$r.squared
+reducedr2<-summary(reducedm2)$r.squared
+
+#?p???L?{
+Rfullr1<-1-fullr1
+Rfullr2<-1-fullr2
+Rreducedr1<-1-reducedr1
+Rreducedr2<-1-reducedr1
+e1<-1-Rfullr1*Rfullr2
+e2<-1-Rreducedr1*Rreducedr2
+Q<-(1-e1)/(1-e2)
+w<- -1*(nrow(dat)-1)*log(Q)
+print(pchisq(w, df=1, lower.tail=FALSE))
+
+
+#path analysis model 
+m1 <- '
+  #regressions
+  read ~ ppsych + motiv
+  arith ~ motiv + read
+  #covariance
+  ppsych ~~ motiv
+'
+fitm1 <- sem(m1, data=dat)
+summary(fitm1)
+
+#?W?[?зǤƫY??
+summary(fitm1, standardized = TRUE)
+
+#?i???ҫ????վ??]?q?`????ĳ?o?˰??^
+modindices(fitm1,sort=TRUE)
+
+#left-hand side (lhs)
+#operation (op)
+#right-hand side of the equation (rhs)
+#the modification index (mi) which is a 1-degree chi-square statistic
+#expected parameter change (epc) represents how much the parameter is expected to change
+#sepec.lv standardizes the epc by the latent variable (in this case there are none)
+#sepec.all standardizes by both Y and X
+#sepc.nox standardizes all but X variables (in this case Y only)
+
+
+#?̾?MI????ĳ
+m2 <- '
+  #regressions
+  read ~ ppsych + motiv
+  arith ~ ppsych + motiv + read
+  #covariance
+  ppsych ~~ motiv
+'
+fitm2 <- sem(m2, data=dat)
+summary(fitm2, standardized = TRUE)
+

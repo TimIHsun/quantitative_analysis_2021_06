@@ -1,0 +1,1 @@
+"0","boy <- merged_data_teps_high_school %>% filter(merged_data_teps_high_school$w1s502 == 1)"

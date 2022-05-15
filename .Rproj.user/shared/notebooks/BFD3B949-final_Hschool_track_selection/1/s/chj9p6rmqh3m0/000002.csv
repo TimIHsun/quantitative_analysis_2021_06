@@ -1,0 +1,9 @@
+"0","merged_data_teps_high_school[merged_data_teps_high_school$w1p103 == 97,] %>% rownames()"
+"1","character(0)
+"
+"0","merged_data_teps_high_school[merged_data_teps_high_school$w1p103 == 99,] %>% rownames()"
+"1","[1]"
+"1"," ""1404"""
+"1","
+"
+"0","merged_data_teps_high_school %>% filter(w1p103 != 97 & w1p103!= 99) -> merged_data_teps_high_school"
